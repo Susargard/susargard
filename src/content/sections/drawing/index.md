@@ -1,9 +1,12 @@
 ---
 title: Графика
 lead: Линия, штрих и бумага. Наброски, академические работы и самостоятельные графические серии.
-order: 1
+order: 2
+coverPosition: center
 theme:
   preset: paper
+  overlay: 0
+  text: auto
   accent: '#a65c3f'
   decor:
     position: bottom-right
