@@ -1,9 +1,12 @@
 ---
 title: Иллюстрация
 lead: Книжная и станковая иллюстрация, образы для пространства и роспись стен.
-order: 2
+order: 1
+coverPosition: center
 theme:
   preset: terracotta
+  overlay: 0
+  text: auto
   accent: '#a9503a'
   decor:
     position: top-right
