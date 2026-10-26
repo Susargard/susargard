@@ -1,0 +1,514 @@
+# Админка сайта susargard.
+#
+# Вход: кнопка «Sign In with Token» на странице /admin/.
+# Токен создаётся на GitHub с правами Contents: Read and write.
+# Когда будет настроен OAuth-воркер, добавьте в backend:
+#   base_url: https://ваш-воркер.workers.dev
+#
+# Версия Sveltia CMS закреплена в package.json. Файл public/admin/sveltia-cms.js
+# скопирован из node_modules/@sveltia/cms/dist/sveltia-cms.js.
+# Обновление: npm i @sveltia/cms@latest && cp node_modules/@sveltia/cms/dist/sveltia-cms.js public/admin/
+
+backend:
+  name: github
+  repo: Susargard/susargard
+  branch: main
+
+site_url: https://susargard.github.io/susargard/
+display_url: https://susargard.github.io/susargard/
+logo_url: https://susargard.github.io/susargard/images/site/og-default.jpg
+
+locale: ru
+
+media_folder: public/uploads
+public_folder: /susargard/uploads
+
+media_libraries:
+  default:
+    config:
+      max_file_size: 52428800 # 50 МБ
+      slugify_filename: true
+  all:
+    transformations:
+      raster_image:
+        format: webp
+        quality: 85
+        width: 2560
+        height: 2560
+      svg:
+        optimize: true
+
+output:
+  omit_empty_optional_fields: true
+
+collections:
+  - name: projects
+    label: Проекты
+    label_singular: Проект
+    description: Работы в разделах «Графика», «Иллюстрация» и «Реставрация».
+    folder: src/content/projects
+    path: '{{slug}}/index'
+    media_folder: ''
+    public_folder: ''
+    identifier_field: title
+    slug:
+      template: '{{slug}}'
+      editable: true
+      hint: 'Адрес страницы. Лучше латиницей: naprimer-tak. Лучше не менять после публикации — папка с картинками переедет, а файлы в /files могут остаться на старом месте.'
+    summary: '{{fields.title}}'
+    sortable_fields: [order, title, year]
+    view_filters:
+      - label: Черновики
+        field: draft
+        pattern: true
+      - label: Избранное на главной
+        field: featured
+        pattern: true
+    view_groups:
+      - label: Раздел
+        field: section
+    fields:
+      - name: title
+        label: Название
+        widget: string
+        hint: 'Как работа будет называться на сайте.'
+
+      - name: section
+        label: Раздел
+        widget: select
+        options:
+          - { label: Графика, value: drawing }
+          - { label: Иллюстрация, value: illustration }
+          - { label: Реставрация, value: restoration }
+
+      - name: summary
+        label: Краткое описание
+        widget: text
+        hint: '1–2 предложения для карточки и превью в поиске.'
+
+      - name: year
+        label: Год
+        widget: string
+        required: false
+        hint: 'Например: 2024 или 2023–2024.'
+
+      - name: featured
+        label: Показывать на главной
+        widget: boolean
+        default: false
+        required: false
+
+      - name: order
+        label: Порядок в разделе
+        widget: number
+        default: 0
+        required: false
+        hint: 'Чем меньше число, тем выше работа. Можно оставить 0.'
+
+      - name: draft
+        label: Черновик
+        widget: boolean
+        default: true
+        required: false
+        hint: 'Черновик не попадает на публичный сайт. Выключите, когда работа готова.'
+
+      - name: cover
+        label: Обложка
+        widget: image
+        required: false
+        hint: 'Горизонтальная или вертикальная — как удобно. Лучше от 1600 px по длинной стороне.'
+
+      - name: coverAlt
+        label: Описание обложки
+        widget: string
+        required: false
+        hint: 'Что изображено — для незрячих и поиска. Например: «Графический лист с тёмной линией».'
+
+      - name: coverPosition
+        label: Кадрирование обложки
+        widget: select
+        required: false
+        default: center
+        options:
+          - { label: По центру, value: center }
+          - { label: Сверху, value: top }
+          - { label: Снизу, value: bottom }
+
+      - name: gallery
+        label: Галерея
+        label_singular: Изображение
+        widget: list
+        required: false
+        summary: '{{fields.alt}}'
+        hint: 'Перетаскивайте изображения, чтобы менять порядок. 10–30 штук на проект — оптимально.'
+        fields:
+          - name: image
+            label: Изображение
+            widget: image
+          - name: alt
+            label: Описание
+            widget: string
+            hint: 'Коротко, что видно на изображении. Обязательное поле для доступности.'
+          - name: caption
+            label: Подпись
+            widget: string
+            required: false
+            hint: 'Необязательно. Показывается под изображением.'
+
+      - name: files
+        label: Файлы
+        label_singular: Файл
+        widget: list
+        required: false
+        summary: '{{fields.title}}'
+        hint: 'PDF, DOCX, ZIP — документация, описание работ, сканы. До 50 МБ на файл.'
+        fields:
+          - name: title
+            label: Название
+            widget: string
+          - name: file
+            label: Файл
+            widget: file
+            required: false
+            media_folder: '/public/files/{{slug}}'
+            public_folder: '/susargard/files/{{slug}}'
+            hint: 'Загрузите файл или оставьте пустым, если используете внешнюю ссылку.'
+          - name: externalUrl
+            label: Внешняя ссылка
+            widget: string
+            required: false
+            hint: 'Например, Яндекс.Диск. Используйте, если файл больше 50 МБ.'
+          - name: note
+            label: Примечание
+            widget: string
+            required: false
+
+      - name: details
+        label: Детали проекта
+        widget: object
+        required: false
+        collapsed: true
+        hint: 'Заполняйте только то, что относится к работе. Пустые поля не показываются.'
+        fields:
+          - { name: object, label: Объект, widget: string, required: false }
+          - { name: city, label: Город, widget: string, required: false }
+          - { name: materials, label: Материалы / техника, widget: string, required: false }
+          - { name: dimensions, label: Размер, widget: string, required: false }
+          - { name: client, label: Заказчик, widget: string, required: false }
+          - name: status
+            label: Статус
+            widget: select
+            required: false
+            options:
+              - { label: Завершено, value: completed }
+              - { label: В работе, value: in-progress }
+          - name: credit
+            label: Кредит / примечание
+            widget: string
+            required: false
+            hint: 'Автор фото, разрешение заказчика или другой комментарий.'
+
+      - name: tags
+        label: Теги
+        label_singular: Тег
+        widget: list
+        required: false
+        default: []
+        hint: 'Например: графика, роспись стен, серия. Первые три видны на карточке.'
+
+      - name: beforeAfter
+        label: До / после
+        widget: object
+        required: false
+        collapsed: true
+        hint: 'Для реставрации. Показывает интерактивное сравнение.'
+        fields:
+          - { name: before, label: Изображение «до», widget: image }
+          - { name: after, label: Изображение «после», widget: image }
+          - { name: caption, label: Подпись, widget: string, required: false }
+
+      - name: theme
+        label: Оформление проекта
+        widget: object
+        required: false
+        collapsed: true
+        hint: 'Необязательно. Если ничего не выбрать, проект наследует тему раздела.'
+        fields:
+          - name: preset
+            label: Тема
+            widget: select
+            required: false
+            options:
+              - { label: Бумага, value: paper }
+              - { label: Шалфей, value: sage }
+              - { label: Терракота, value: terracotta }
+              - { label: Камень, value: stone }
+              - { label: Глина, value: clay }
+              - { label: Тёмная, value: ink }
+          - name: background
+            label: Фон
+            widget: object
+            required: false
+            collapsed: true
+            fields:
+              - name: color
+                label: Цвет фона
+                widget: color
+                required: false
+                hint: 'Например #f5f0e6. Оставьте пустым, чтобы взять цвет темы.'
+              - name: image
+                label: Картинка фона
+                widget: image
+                required: false
+                hint: 'Необязательно. Астро оптимизирует её при сборке.'
+          - name: overlay
+            label: 'Затемнение фона, %'
+            widget: number
+            required: false
+            default: 0
+            min: 0
+            max: 90
+            hint: 'Если текст плохо читается на фоне — увеличьте затемнение.'
+          - name: text
+            label: Цвет текста
+            widget: select
+            required: false
+            default: auto
+            options:
+              - { label: Автоматически, value: auto }
+              - { label: Светлый, value: light }
+              - { label: Тёмный, value: dark }
+          - name: accent
+            label: Акцентный цвет
+            widget: color
+            required: false
+            hint: 'Цвет ссылок, линий и деталей.'
+          - name: decor
+            label: Декор
+            widget: object
+            required: false
+            collapsed: true
+            fields:
+              - { name: image, label: Изображение, widget: image, required: false, hint: 'PNG или SVG с прозрачным фоном.' }
+              - name: position
+                label: Положение
+                widget: select
+                required: false
+                default: bottom-right
+                options:
+                  - { label: Слева сверху, value: top-left }
+                  - { label: Справа сверху, value: top-right }
+                  - { label: Слева снизу, value: bottom-left }
+                  - { label: Справа снизу, value: bottom-right }
+              - { name: size, label: 'Размер, %', widget: number, required: false, default: 28, min: 6, max: 70 }
+              - { name: opacity, label: 'Прозрачность, %', widget: number, required: false, default: 30, min: 5, max: 100 }
+
+      - name: seoDescription
+        label: Описание для поиска
+        widget: text
+        required: false
+        hint: 'Одно предложение. Если пусто — возьмётся краткое описание.'
+
+      - name: body
+        label: Полное описание
+        widget: markdown
+        required: false
+
+  - name: sections
+    label: Разделы
+    label_singular: Раздел
+    description: Названия, тексты и оформление трёх разделов.
+    folder: src/content/sections
+    path: '{{slug}}/index'
+    media_folder: ''
+    public_folder: ''
+    identifier_field: title
+    slug:
+      editable: false
+    create: false
+    delete: false
+    fields:
+      - { name: title, label: Название, widget: string }
+      - { name: lead, label: Короткое описание, widget: text, hint: 'Одна строка для карточки на главной и шапки раздела.' }
+      - { name: order, label: Порядок, widget: number, default: 0 }
+      - { name: cover, label: Обложка раздела, widget: image, required: false, hint: 'Необязательно. Если нет — раздел живёт на цвете и декоре.' }
+      - { name: coverAlt, label: Описание обложки, widget: string, required: false }
+      - name: coverPosition
+        label: Кадрирование обложки
+        widget: select
+        required: false
+        default: center
+        options:
+          - { label: По центру, value: center }
+          - { label: Сверху, value: top }
+          - { label: Снизу, value: bottom }
+      - name: theme
+        label: Оформление раздела
+        widget: object
+        required: false
+        collapsed: true
+        fields:
+          - name: preset
+            label: Тема
+            widget: select
+            required: false
+            options:
+              - { label: Бумага, value: paper }
+              - { label: Шалфей, value: sage }
+              - { label: Терракота, value: terracotta }
+              - { label: Камень, value: stone }
+              - { label: Глина, value: clay }
+              - { label: Тёмная, value: ink }
+          - name: background
+            label: Фон
+            widget: object
+            required: false
+            collapsed: true
+            fields:
+              - { name: color, label: Цвет фона, widget: color, required: false }
+              - { name: image, label: Картинка фона, widget: image, required: false }
+          - { name: overlay, label: 'Затемнение фона, %', widget: number, required: false, default: 0, min: 0, max: 90 }
+          - name: text
+            label: Цвет текста
+            widget: select
+            required: false
+            default: auto
+            options:
+              - { label: Автоматически, value: auto }
+              - { label: Светлый, value: light }
+              - { label: Тёмный, value: dark }
+          - { name: accent, label: Акцентный цвет, widget: color, required: false }
+          - name: decor
+            label: Декор
+            widget: object
+            required: false
+            collapsed: true
+            fields:
+              - { name: image, label: Изображение, widget: image, required: false }
+              - name: position
+                label: Положение
+                widget: select
+                required: false
+                default: bottom-right
+                options:
+                  - { label: Слева сверху, value: top-left }
+                  - { label: Справа сверху, value: top-right }
+                  - { label: Слева снизу, value: bottom-left }
+                  - { label: Справа снизу, value: bottom-right }
+              - { name: size, label: 'Размер, %', widget: number, required: false, default: 28, min: 6, max: 70 }
+              - { name: opacity, label: 'Прозрачность, %', widget: number, required: false, default: 30, min: 5, max: 100 }
+      - { name: seoDescription, label: Описание для поиска, widget: text, required: false }
+      - { name: body, label: Вступительный текст, widget: markdown, required: false }
+
+  - name: pages
+    label: Страницы
+    files:
+      - name: about
+        label: Обо мне
+        file: src/content/pages/about.md
+        fields:
+          - { name: title, label: Заголовок, widget: string }
+          - { name: lead, label: Подзаголовок, widget: text }
+          - { name: intro, label: Короткое вступление, widget: text, required: false }
+          - name: portrait
+            label: Портрет
+            widget: image
+            required: false
+            media_folder: '/public/images/site'
+            public_folder: '/susargard/images/site'
+            hint: 'Вертикальное фото, лучше от 1200 px.'
+          - name: experience
+            label: Опыт
+            label_singular: Место работы / проект
+            widget: list
+            required: false
+            summary: '{{fields.role}} — {{fields.period}}'
+            hint: 'Главный блок страницы. Можно добавлять, удалять и менять порядок.'
+            fields:
+              - { name: period, label: Период, widget: string, hint: 'Например: 2022 — 2024 или «сейчас».' }
+              - { name: role, label: Роль / занятие, widget: string }
+              - { name: place, label: Место, widget: string, required: false }
+              - { name: description, label: Описание, widget: text, required: false }
+          - name: education
+            label: Образование
+            label_singular: Учебное заведение
+            widget: list
+            required: false
+            summary: '{{fields.title}}'
+            fields:
+              - { name: period, label: Период, widget: string }
+              - { name: title, label: Специальность / программа, widget: string }
+              - { name: place, label: Учебное заведение, widget: string, required: false }
+          - name: services
+            label: Чем могу помочь
+            label_singular: Услуга
+            widget: list
+            required: false
+            summary: '{{fields.title}}'
+            fields:
+              - { name: title, label: Название, widget: string }
+              - { name: description, label: Описание, widget: text, required: false }
+          - name: exhibitions
+            label: Выставки и публикации
+            label_singular: Выставка / публикация
+            widget: list
+            required: false
+            summary: '{{fields.title}}'
+            fields:
+              - { name: year, label: Год, widget: string }
+              - { name: title, label: Название, widget: string }
+              - { name: place, label: Место, widget: string, required: false }
+          - { name: seoDescription, label: Описание для поиска, widget: text, required: false }
+          - { name: body, label: Свободный текст, widget: markdown, required: false }
+
+      - name: contacts
+        label: Контакты
+        file: src/content/pages/contacts.md
+        fields:
+          - { name: title, label: Заголовок, widget: string }
+          - { name: lead, label: Подзаголовок, widget: text }
+          - { name: intro, label: Короткое вступление, widget: text, required: false }
+          - { name: seoDescription, label: Описание для поиска, widget: text, required: false }
+          - { name: body, label: Дополнительный текст, widget: markdown, required: false }
+
+  - name: settings
+    label: Настройки сайта
+    files:
+      - name: site
+        label: Сайт
+        file: src/content/settings/site.yaml
+        fields:
+          - name: site
+            label: Настройки
+            widget: object
+            fields:
+              - { name: name, label: Имя, widget: string }
+              - { name: alias, label: Псевдоним / вордмарк, widget: string }
+              - { name: role, label: Роль, widget: string }
+              - { name: city, label: Город, widget: string, required: false }
+              - { name: email, label: Почта, widget: string, required: false, hint: 'Если пусто — ссылка не появится.' }
+              - { name: telegram, label: Telegram, widget: string, required: false, hint: '@username или полная ссылка.' }
+              - { name: instagram, label: Instagram, widget: string, required: false }
+              - { name: behance, label: Behance, widget: string, required: false }
+              - { name: vk, label: VK, widget: string, required: false }
+              - { name: available, label: Открыта к заказам, widget: boolean, default: true, required: false }
+              - { name: availabilityNote, label: Текст статуса, widget: string, required: false }
+              - { name: homeTitle, label: Заголовок главной, widget: text }
+              - { name: homeLead, label: Подзаголовок главной, widget: text }
+              - { name: homeIntro, label: Короткий текст о себе на главной, widget: text, required: false }
+              - name: portrait
+                label: Портрет на главной
+                widget: image
+                required: false
+                media_folder: '/public/images/site'
+                public_folder: '/susargard/images/site'
+              - { name: portraitAlt, label: Описание портрета, widget: string, required: false }
+              - { name: footerNote, label: Подпись в подвале, widget: string, required: false }
+              - { name: seoDescription, label: Описание сайта для поиска, widget: text }
+              - name: ogImage
+                label: Картинка для соцсетей
+                widget: image
+                required: false
+                media_folder: '/public/images/site'
+                public_folder: '/susargard/images/site'
+                hint: '1200 × 630 px, WebP или JPG.'

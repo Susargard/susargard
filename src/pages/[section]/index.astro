@@ -1,0 +1,110 @@
+---
+import { render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ProjectCard from '../../components/ProjectCard.astro';
+import EmptyState from '../../components/EmptyState.astro';
+import {
+  getSections,
+  getProjects,
+  getSettings,
+  projectsOf,
+  withBase,
+  type SectionEntry,
+} from '../../lib/content';
+import { resolveTheme } from '../../lib/theme';
+import { worksLabel } from '../../lib/plural';
+
+export async function getStaticPaths() {
+  const sections = await getSections();
+  return sections.map((section) => ({
+    params: { section: section.id },
+    props: { section },
+  }));
+}
+
+interface Props {
+  section: SectionEntry;
+}
+
+const { section } = Astro.props;
+const { data } = section;
+const { Content } = await render(section);
+
+const settings = await getSettings();
+const sections = await getSections();
+const projects = projectsOf(await getProjects(), section.id);
+const index = sections.findIndex((item) => item.id === section.id);
+const next = sections[(index + 1) % sections.length];
+const number = String(index + 1).padStart(2, '0');
+const nextTheme = next ? resolveTheme(next.data.theme) : undefined;
+const instagram = settings.instagram;
+const variant = (['branch', 'seed', 'arch'] as const)[index % 3];
+---
+
+<BaseLayout
+  title={data.title}
+  description={data.seoDescription || data.lead}
+  theme={data.theme}
+  fallbackPreset={data.theme?.preset}
+>
+  <div class="container">
+    <nav class="breadcrumbs" aria-label="Хлебные крошки">
+      <a href={withBase('/')}>Главная</a>
+      <span aria-hidden="true">/</span>
+      <span aria-current="page">{data.title}</span>
+    </nav>
+
+    <header class="section-hero">
+      <span class="section-hero__number" aria-hidden="true">{number}</span>
+
+      <div class="section-hero__main">
+        <p class="eyebrow">Раздел · {worksLabel(projects.length)}</p>
+        <h1 class="section-hero__title">{data.title}</h1>
+        <p class="section-hero__lead">{data.lead}</p>
+        <div class="prose section-hero__prose">
+          <Content />
+        </div>
+        <a class="link-arrow section-hero__jump" href="#works">
+          К работам <span aria-hidden="true">↓</span>
+        </a>
+      </div>
+    </header>
+  </div>
+
+  <section class="section-projects" id="works">
+    <div class="container">
+      {
+        projects.length > 0 ? (
+          <div class="project-grid">
+            {projects.map((project, projectIndex) => (
+              <ProjectCard project={project} index={projectIndex} />
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            eyebrow="Раздел наполняется"
+            title="Здесь скоро появятся работы"
+            text={`Проекты раздела «${data.title}» добавляются через админку — без правок кода. Пока новые работы и процесс можно смотреть в Instagram.`}
+            variant={variant}
+            ctaHref={instagram ?? withBase('/contacts/')}
+            ctaLabel={instagram ? 'Смотреть в Instagram' : 'Связаться'}
+            external={Boolean(instagram)}
+          />
+        )
+      }
+    </div>
+  </section>
+
+  {
+    next && next.id !== section.id && nextTheme && (
+      <nav class="container">
+        <a class="section-next" href={withBase(`/${next.id}/`)} style={nextTheme.style}>
+          <span class="section-next__eyebrow">Следующий раздел</span>
+          <span class="section-next__title">{next.data.title}</span>
+          <span class="section-next__lead">{next.data.lead}</span>
+          <span class="section-next__arrow" aria-hidden="true">→</span>
+        </a>
+      </nav>
+    )
+  }
+</BaseLayout>

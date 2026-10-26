@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /susargard/admin/
+
+Sitemap: https://susargard.github.io/susargard/sitemap-index.xml

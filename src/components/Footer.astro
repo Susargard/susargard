@@ -1,0 +1,75 @@
+---
+import type { SiteSettings } from '../lib/content';
+import { getSections, withBase } from '../lib/content';
+import { contactLinks } from '../lib/social';
+
+interface Props {
+  settings: SiteSettings;
+}
+
+const { settings } = Astro.props;
+const sections = await getSections();
+const links = contactLinks(settings).slice(0, 4);
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="site-footer__top">
+      <div class="site-footer__brand">
+        <a class="wordmark wordmark--footer" href={withBase('/')}>
+          <span class="wordmark__main">{settings.alias}</span>
+          <span class="wordmark__sub">{settings.name}</span>
+        </a>
+        <p class="site-footer__note">
+          {settings.footerNote || `${settings.name} · ${settings.role}`}
+        </p>
+      </div>
+
+      <nav class="site-footer__nav" aria-label="Разделы сайта">
+        <p class="eyebrow">Разделы</p>
+        <ul>
+          {sections.map((section) => (
+            <li>
+              <a href={withBase(`/${section.id}/`)}>{section.data.title}</a>
+            </li>
+          ))}
+          <li><a href={withBase('/about/')}>Обо мне</a></li>
+          <li><a href={withBase('/contacts/')}>Контакты</a></li>
+        </ul>
+      </nav>
+
+      <div class="site-footer__contacts">
+        <p class="eyebrow">Связь</p>
+        {
+          links.length > 0 ? (
+            <ul>
+              {links.map((link) => (
+                <li>
+                  <a
+                    href={link.href}
+                    target={link.external ? '_blank' : undefined}
+                    rel={link.external ? 'noopener noreferrer' : undefined}
+                  >
+                    {link.label} <span class="muted">{link.value}</span>
+                    {link.external && <span aria-hidden="true"> ↗</span>}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p class="muted">Контакты скоро появятся.</p>
+          )
+        }
+        {settings.city && <p class="site-footer__city">{settings.city}</p>}
+      </div>
+    </div>
+
+    <div class="site-footer__bottom">
+      <span>© {year} {settings.name}</span>
+      <span class="site-footer__sep" aria-hidden="true">·</span>
+      <span>{settings.alias}</span>
+      <a class="site-footer__admin" href={withBase('/admin/')} data-astro-reload>Управление сайтом</a>
+    </div>
+  </div>
+</footer>

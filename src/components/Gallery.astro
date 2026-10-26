@@ -1,0 +1,98 @@
+---
+import { Image, getImage } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import { imagesLabel } from '../lib/plural';
+
+interface GalleryItem {
+  image: ImageMetadata;
+  alt: string;
+  caption?: string;
+}
+
+interface Props {
+  items: GalleryItem[];
+  title: string;
+}
+
+const { items, title } = Astro.props;
+
+const prepared = await Promise.all(
+  items.map(async (item, index) => {
+    const width = Math.min(item.image.width, 2400);
+    const height = Math.round((item.image.height / item.image.width) * width);
+    const full = await getImage({
+      src: item.image,
+      width,
+      height,
+      format: 'webp',
+      quality: 88,
+    });
+    return {
+      ...item,
+      full,
+      width,
+      height,
+      wide: item.image.width / item.image.height > 1.12,
+      number: String(index + 1).padStart(2, '0'),
+    };
+  }),
+);
+---
+
+{
+  items.length > 0 && (
+    <section class="gallery-block" aria-labelledby="gallery-title">
+      <div class="gallery-block__head">
+        <h2 id="gallery-title" class="section-heading">Галерея</h2>
+        <span class="muted">{imagesLabel(items.length)}</span>
+      </div>
+
+      <div class="gallery pswp-gallery" data-gallery aria-label={`Галерея: ${title}`}>
+        {prepared.map((item) => (
+          <figure class:list={['gallery__item', { 'gallery__item--wide': item.wide }]}>
+            <a
+              class="gallery__link pswp-item"
+              href={item.full.src}
+              data-pswp-width={item.width}
+              data-pswp-height={item.height}
+              aria-label={`Открыть изображение «${item.alt}»`}
+            >
+              <Image
+                src={item.image}
+                alt={item.alt}
+                widths={[420, 720, 1080, 1500]}
+                sizes="(max-width: 700px) 92vw, (max-width: 1100px) 60vw, 52vw"
+                loading="lazy"
+                decoding="async"
+                class="gallery__image"
+              />
+              <span class="gallery__zoom" aria-hidden="true">↗</span>
+            </a>
+            <figcaption class="gallery__caption">
+              <span class="gallery__number">{item.number}</span>
+              <span>{item.caption || item.alt}</span>
+            </figcaption>
+          </figure>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+<script>
+  import PhotoSwipeLightbox from 'photoswipe/lightbox';
+  import 'photoswipe/style.css';
+
+  const gallery = document.querySelector<HTMLElement>('.pswp-gallery');
+  if (gallery) {
+    const lightbox = new PhotoSwipeLightbox({
+      gallery: '.pswp-gallery',
+      children: 'a.pswp-item',
+      pswpModule: () => import('photoswipe'),
+      bgOpacity: 0.97,
+      showHideAnimationType: 'fade',
+      imageClickAction: 'zoom',
+    });
+    lightbox.init();
+  }
+</script>

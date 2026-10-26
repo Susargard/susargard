@@ -1,0 +1,73 @@
+---
+import type { ProjectEntry } from '../lib/content';
+import { fileUrl, formatBytes, fileExtension } from '../lib/content';
+import { fileSize } from '../lib/files';
+import { documentsLabel } from '../lib/plural';
+
+interface Props {
+  files: ProjectEntry['data']['files'];
+  slug: string;
+}
+
+const { files, slug } = Astro.props;
+
+const prepared = await Promise.all(
+  files
+    .filter((file) => file.file || file.externalUrl)
+    .map(async (file) => {
+    const url = fileUrl(file.file, slug, file.externalUrl);
+    const size = await fileSize(file.file);
+    return {
+      ...file,
+      url,
+      size,
+      extension: fileExtension(file.file) ?? fileExtension(file.externalUrl) ?? 'LINK',
+      external: Boolean(file.externalUrl),
+    };
+  }),
+);
+---
+
+{
+  prepared.length > 0 && (
+    <section class="files-block" aria-labelledby="files-title">
+      <div class="gallery-block__head">
+        <h2 id="files-title" class="section-heading">Файлы</h2>
+        <span class="muted">{documentsLabel(prepared.length)}</span>
+      </div>
+
+      <ul class="file-list">
+        {prepared.map((file) => (
+          <li class="file-list__item">
+            <a
+              class="file-list__link"
+              href={file.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              download={file.extension !== 'PDF' ? true : undefined}
+            >
+              <span class="file-list__icon" aria-hidden="true">
+                <svg viewBox="0 0 32 40" fill="none" stroke="currentColor" stroke-width="1.2">
+                  <path d="M4 1h16l8 8v30H4z" />
+                  <path d="M20 1v8h8" />
+                  <path d="M10 22h12M10 28h9" />
+                </svg>
+                <span class="file-list__ext">{file.extension}</span>
+              </span>
+
+              <span class="file-list__text">
+                <span class="file-list__title">{file.title}</span>
+                {file.note && <span class="file-list__note">{file.note}</span>}
+              </span>
+
+              <span class="file-list__meta">
+                {file.size !== undefined && <span>{formatBytes(file.size)}</span>}
+                <span aria-hidden="true">↓</span>
+              </span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}

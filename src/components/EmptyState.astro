@@ -1,0 +1,46 @@
+---
+import Ornament from './Ornament.astro';
+
+interface Props {
+  title: string;
+  text: string;
+  eyebrow?: string;
+  variant?: 'branch' | 'arch' | 'seed' | 'sun' | 'wave';
+  ctaHref?: string;
+  ctaLabel?: string;
+  external?: boolean;
+}
+
+const {
+  title,
+  text,
+  eyebrow = 'Раздел наполняется',
+  variant = 'branch',
+  ctaHref,
+  ctaLabel,
+  external = false,
+} = Astro.props;
+---
+
+<div class="empty-state">
+  <div class="empty-state__art" aria-hidden="true">
+    <Ornament variant={variant} />
+  </div>
+  <div class="empty-state__body">
+    <p class="eyebrow">{eyebrow}</p>
+    <h2 class="empty-state__title">{title}</h2>
+    <p class="empty-state__text">{text}</p>
+    {
+      ctaHref && ctaLabel && (
+        <a
+          class="link-arrow"
+          href={ctaHref}
+          target={external ? '_blank' : undefined}
+          rel={external ? 'noopener noreferrer' : undefined}
+        >
+          {ctaLabel} <span aria-hidden="true">{external ? '↗' : '→'}</span>
+        </a>
+      )
+    }
+  </div>
+</div>

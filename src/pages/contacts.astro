@@ -1,0 +1,66 @@
+---
+import { render } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ContactLinks from '../components/ContactLinks.astro';
+import Ornament from '../components/Ornament.astro';
+import { getPage, getSettings, withBase } from '../lib/content';
+import { resolveTheme } from '../lib/theme';
+
+const page = await getPage('contacts');
+const { data } = page;
+const { Content } = await render(page);
+const settings = await getSettings();
+const asideTheme = resolveTheme({ preset: 'ink' });
+---
+
+<BaseLayout
+  title={data.title}
+  description={data.seoDescription || data.lead}
+  theme={{ preset: 'clay', accent: '#b06a4b' }}
+>
+  <div class="container">
+    <nav class="breadcrumbs" aria-label="Хлебные крошки">
+      <a href={withBase('/')}>Главная</a>
+      <span aria-hidden="true">/</span>
+      <span aria-current="page">{data.title}</span>
+    </nav>
+
+    <header class="page-hero">
+      <p class="eyebrow">Контакты</p>
+      <h1 class="page-hero__title">{data.title}</h1>
+      <p class="page-hero__lead">{data.lead}</p>
+    </header>
+
+    <div class="contacts-layout">
+      <div class="contacts-main">
+        <ContactLinks settings={settings} />
+        <div class="prose contacts-prose">
+          <Content />
+        </div>
+      </div>
+
+      <aside class="contacts-aside" style={asideTheme.style}>
+        <div class="contacts-aside__art" aria-hidden="true">
+          <Ornament variant="sun" />
+        </div>
+        <p class="eyebrow">Коротко</p>
+        <p class="contacts-aside__text">
+          {data.intro || 'Открыта к заказам, сотрудничеству и интересным идеям.'}
+        </p>
+        <dl class="contacts-aside__facts">
+          {settings.city && (
+            <div>
+              <dt>Город</dt>
+              <dd>{settings.city}</dd>
+            </div>
+          )}
+          <div>
+            <dt>Статус</dt>
+            <dd>{settings.available ? 'Открыта к заказам' : 'Сейчас не беру новые проекты'}</dd>
+          </div>
+        </dl>
+        <span class="contacts-aside__hand" aria-hidden="true">напишите</span>
+      </aside>
+    </div>
+  </div>
+</BaseLayout>

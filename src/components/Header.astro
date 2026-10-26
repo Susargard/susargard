@@ -1,0 +1,113 @@
+---
+import type { SiteSettings } from '../lib/content';
+import { getSections, withBase } from '../lib/content';
+
+interface Props {
+  settings: SiteSettings;
+}
+
+const { settings } = Astro.props;
+const sections = await getSections();
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const current = base && Astro.url.pathname.startsWith(base)
+  ? Astro.url.pathname.slice(base.length) || '/'
+  : Astro.url.pathname;
+
+const active = (href: string) =>
+  href === '/' ? current === '/' : current === href || current.startsWith(href);
+---
+
+<header class="site-header" data-header>
+  <div class="site-header__inner">
+    <a class="wordmark" href={withBase('/')} aria-label={`${settings.alias} — на главную`}>
+      <span class="wordmark__main">{settings.alias}</span>
+      <span class="wordmark__sub">{settings.name}</span>
+    </a>
+
+    <button
+      class="nav-toggle"
+      type="button"
+      aria-expanded="false"
+      aria-controls="site-nav"
+      aria-label="Открыть меню"
+    >
+      <span class="nav-toggle__icon" aria-hidden="true"><span></span><span></span></span>
+      <span class="nav-toggle__label">Меню</span>
+    </button>
+
+    <nav class="site-nav" id="site-nav" aria-label="Основная навигация">
+      <div class="site-nav__group">
+        {
+          sections.map((section) => (
+            <a
+              href={withBase(`/${section.id}/`)}
+              class:list={['site-nav__link', { 'is-active': active(`/${section.id}/`) }]}
+            >
+              {section.data.title}
+            </a>
+          ))
+        }
+      </div>
+      <span class="site-nav__divider" aria-hidden="true"></span>
+      <div class="site-nav__group">
+        <a
+          href={withBase('/about/')}
+          class:list={['site-nav__link', { 'is-active': active('/about/') }]}
+        >
+          Обо мне
+        </a>
+        <a
+          href={withBase('/contacts/')}
+          class:list={['site-nav__link', { 'is-active': active('/contacts/') }]}
+        >
+          Контакты
+        </a>
+      </div>
+      {
+        settings.instagram && (
+          <a
+            class="site-nav__link site-nav__link--external"
+            href={settings.instagram}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Instagram <span aria-hidden="true">↗</span>
+          </a>
+        )
+      }
+    </nav>
+  </div>
+</header>
+
+<script>
+  const header = document.querySelector<HTMLElement>('[data-header]');
+  const toggle = header?.querySelector<HTMLButtonElement>('.nav-toggle');
+  const nav = header?.querySelector<HTMLElement>('#site-nav');
+  const label = toggle?.querySelector<HTMLElement>('.nav-toggle__label');
+
+  if (header && toggle && nav && label) {
+    const setOpen = (open: boolean) => {
+      header.toggleAttribute('data-nav-open', open);
+      toggle.setAttribute('aria-expanded', String(open));
+      toggle.setAttribute('aria-label', open ? 'Закрыть меню' : 'Открыть меню');
+      label.textContent = open ? 'Закрыть' : 'Меню';
+    };
+
+    toggle.addEventListener('click', () => {
+      setOpen(!header.hasAttribute('data-nav-open'));
+    });
+
+    nav.querySelectorAll('a').forEach((link) => {
+      link.addEventListener('click', () => setOpen(false));
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') setOpen(false);
+    });
+
+    window.matchMedia('(min-width: 901px)').addEventListener('change', (event) => {
+      if (event.matches) setOpen(false);
+    });
+  }
+</script>

@@ -1,0 +1,205 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SectionCard from '../components/SectionCard.astro';
+import ProjectCard from '../components/ProjectCard.astro';
+import EmptyState from '../components/EmptyState.astro';
+import Ornament from '../components/Ornament.astro';
+import {
+  getSettings,
+  getSections,
+  getProjects,
+  featuredProjects,
+  projectsOf,
+  withBase,
+} from '../lib/content';
+import { resolveTheme } from '../lib/theme';
+import { worksLabel } from '../lib/plural';
+
+const settings = await getSettings();
+const sections = await getSections();
+const projects = await getProjects();
+const featured = featuredProjects(projects, 6);
+const counts = Object.fromEntries(
+  sections.map((section) => [section.id, projectsOf(projects, section.id).length]),
+);
+const portrait = settings.portrait ? withBase(settings.portrait) : undefined;
+const inkTheme = resolveTheme({ preset: 'ink' });
+const instagram = settings.instagram;
+---
+
+<BaseLayout>
+  <section class="home-hero">
+    <div class="container">
+      <div class="home-hero__grid">
+        <div class="home-hero__content">
+          <p class="eyebrow home-hero__eyebrow">
+            <span>Портфолио</span>
+            {settings.city && <><span class="dot" aria-hidden="true"></span><span>{settings.city}</span></>}
+          </p>
+
+          <h1 class="home-hero__title">{settings.homeTitle}</h1>
+          <p class="home-hero__lead">{settings.homeLead}</p>
+
+          <div class="home-hero__actions">
+            <a class="btn" href="#works">Смотреть работы</a>
+            <a class="link-arrow" href={withBase('/about/')}>Обо мне <span aria-hidden="true">→</span></a>
+          </div>
+
+          {
+            (settings.available || settings.availabilityNote) && (
+              <p class="home-hero__status">
+                <span class="status">
+                  <span class="status__dot" aria-hidden="true"></span>
+                  {settings.availabilityNote || 'Открыта к заказам'}
+                </span>
+              </p>
+            )
+          }
+        </div>
+
+        <aside class="home-hero__plate" aria-label="Знак susargard">
+          <div class="home-hero__plate-inner">
+            {
+              portrait ? (
+                <img
+                  class="home-hero__portrait"
+                  src={portrait}
+                  alt={settings.portraitAlt || settings.name}
+                  loading="eager"
+                  decoding="async"
+                />
+              ) : (
+                <>
+                  <Ornament variant="branch" class="home-hero__ornament" />
+                  <span class="home-hero__monogram" aria-hidden="true">АС</span>
+                </>
+              )
+            }
+          </div>
+          <span class="home-hero__hand" aria-hidden="true">тихие истории</span>
+          <span class="home-hero__plate-caption">{settings.alias} · {settings.role}</span>
+        </aside>
+      </div>
+
+      <div class="home-hero__strip" aria-hidden="true">
+        <span>графика</span><span>·</span><span>иллюстрация</span><span>·</span><span>реставрация</span><span>·</span><span>роспись стен</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="home-works" id="works">
+    <div class="container">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Избранное</p>
+          <h2 class="section-head__title">Работы</h2>
+        </div>
+        {
+          instagram && (
+            <a class="link-arrow" href={instagram} target="_blank" rel="noopener noreferrer">
+              Больше в Instagram <span aria-hidden="true">↗</span>
+            </a>
+          )
+        }
+      </div>
+
+      {
+        featured.length > 0 ? (
+          <div class="project-grid project-grid--home">
+            {featured.map((project, index) => (
+              <ProjectCard project={project} index={index} compact />
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            eyebrow="Портфолио наполняется"
+            title="Первые работы скоро появятся"
+            text="Здесь будет небольшая подборка из графики, иллюстрации и реставрации. Пока процесс и новые работы можно смотреть в Instagram."
+            variant="seed"
+            ctaHref={instagram ?? withBase('/contacts/')}
+            ctaLabel={instagram ? 'Смотреть в Instagram' : 'Связаться'}
+            external={Boolean(instagram)}
+          />
+        )
+      }
+    </div>
+  </section>
+
+  <section class="home-sections">
+    <div class="container">
+      <div class="section-head section-head--split">
+        <div>
+          <p class="eyebrow">Направления</p>
+          <h2 class="section-head__title">Три способа смотреть</h2>
+        </div>
+        <p class="section-head__aside">
+          Каждый раздел — своё настроение: бумага, цвет и время. Внутри — проекты,
+          галереи и детали.
+        </p>
+      </div>
+
+      <div class="section-list">
+        {sections.map((section, index) => (
+          <SectionCard section={section} count={counts[section.id] ?? 0} index={index} />
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="home-about">
+    <div class="container home-about__grid">
+      <div class="home-about__art" aria-hidden="true">
+        <Ornament variant="arch" />
+        <span class="home-about__art-label">опыт</span>
+      </div>
+
+      <div class="home-about__content">
+        <p class="eyebrow">Обо мне</p>
+        <h2 class="home-about__title">Практика на стыке линии, цвета и материала</h2>
+        <p class="home-about__text">{settings.homeIntro}</p>
+        <a class="link-arrow" href={withBase('/about/')}>
+          Опыт и образование <span aria-hidden="true">→</span>
+        </a>
+
+        <dl class="home-about__facts">
+          <div>
+            <dt>Город</dt>
+            <dd>{settings.city || '—'}</dd>
+          </div>
+          <div>
+            <dt>Работ в архиве</dt>
+            <dd>{projects.length ? worksLabel(projects.length) : 'пополняется'}</dd>
+          </div>
+          <div>
+            <dt>Направления</dt>
+            <dd>{sections.length}</dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-band" style={inkTheme.style}>
+    <div class="container cta-band__grid">
+      <div>
+        <p class="eyebrow">Связь</p>
+        <h2 class="cta-band__title">Есть идея или проект?</h2>
+        <p class="cta-band__text">
+          Напишите пару слов о задумке — обсудим, как её можно воплотить.
+        </p>
+      </div>
+      <div class="cta-band__actions">
+        <a
+          class="btn btn--invert"
+          href={instagram ?? withBase('/contacts/')}
+          target={instagram ? '_blank' : undefined}
+          rel={instagram ? 'noopener noreferrer' : undefined}
+        >
+          {instagram ? 'Написать в Instagram' : 'Все контакты'}
+          <span aria-hidden="true">{instagram ? '↗' : '→'}</span>
+        </a>
+        <a class="link-arrow" href={withBase('/contacts/')}>Контакты <span aria-hidden="true">→</span></a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

@@ -1,0 +1,60 @@
+---
+import { Image } from 'astro:assets';
+import type { SectionEntry } from '../lib/content';
+import { sectionUrl } from '../lib/content';
+import { resolveTheme } from '../lib/theme';
+import { worksLabel } from '../lib/plural';
+import Ornament from './Ornament.astro';
+
+interface Props {
+  section: SectionEntry;
+  count: number;
+  index: number;
+}
+
+const { section, count, index } = Astro.props;
+const { data } = section;
+const resolved = resolveTheme(data.theme);
+const variants = ['branch', 'seed', 'arch'] as const;
+const variant = variants[index % variants.length];
+const number = String(index + 1).padStart(2, '0');
+---
+
+<a class="section-card" href={sectionUrl(section.id)} style={resolved.style}>
+  <div class="section-card__body">
+    <div class="section-card__topline">
+      <span class="section-card__number">{number}</span>
+      <span class="section-card__count">{worksLabel(count)}</span>
+    </div>
+
+    <div class="section-card__text">
+      <h3 class="section-card__title">{data.title}</h3>
+      <p class="section-card__lead">{data.lead}</p>
+    </div>
+
+    <span class="section-card__cta">
+      Смотреть раздел
+      <span class="arrow" aria-hidden="true">→</span>
+    </span>
+  </div>
+
+  <div class="section-card__visual" aria-hidden="true">
+    {
+      data.cover ? (
+        <Image
+          src={data.cover}
+          alt={data.coverAlt ?? ''}
+          widths={[400, 700, 1000]}
+          sizes="(max-width: 760px) 100vw, 34vw"
+          loading="lazy"
+          decoding="async"
+          class="section-card__image"
+          style={`object-position:center ${data.coverPosition}`}
+        />
+      ) : (
+        <Ornament variant={variant} class="section-card__ornament" />
+      )
+    }
+    <span class="section-card__stamp">{data.title}</span>
+  </div>
+</a>

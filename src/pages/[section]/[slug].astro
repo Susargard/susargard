@@ -1,0 +1,212 @@
+---
+import { render } from 'astro:content';
+import { Image } from 'astro:assets';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Gallery from '../../components/Gallery.astro';
+import BeforeAfter from '../../components/BeforeAfter.astro';
+import FileList from '../../components/FileList.astro';
+import Ornament from '../../components/Ornament.astro';
+import {
+  getProjects,
+  getSections,
+  getSettings,
+  projectsOf,
+  projectUrl,
+  sectionUrl,
+  formatYear,
+  withBase,
+  type ProjectEntry,
+  type SectionEntry,
+} from '../../lib/content';
+
+export async function getStaticPaths() {
+  const projects = await getProjects();
+  return projects.map((project) => ({
+    params: { section: project.data.section, slug: project.id },
+    props: { project },
+  }));
+}
+
+interface Props {
+  project: ProjectEntry;
+}
+
+const { project } = Astro.props;
+const { data } = project;
+const { Content } = await render(project);
+
+const settings = await getSettings();
+const sections = await getSections();
+const section = sections.find((item) => item.id === data.section);
+const siblings = projectsOf(await getProjects(), data.section);
+const index = siblings.findIndex((item) => item.id === project.id);
+const next = siblings.length > 1 ? siblings[(index + 1) % siblings.length] : undefined;
+
+const year = formatYear(data.year);
+const sectionTitle = section?.data.title ?? data.section;
+const statusLabels: Record<string, string> = {
+  completed: 'Завершено',
+  'in-progress': 'В работе',
+};
+
+const detailRows = [
+  { label: 'Объект', value: data.details?.object },
+  { label: 'Город', value: data.details?.city },
+  { label: 'Год', value: year },
+  { label: 'Материалы', value: data.details?.materials },
+  { label: 'Размер', value: data.details?.dimensions },
+  { label: 'Заказчик', value: data.details?.client },
+  {
+    label: 'Статус',
+    value: data.details?.status ? statusLabels[data.details.status] : undefined,
+  },
+  { label: 'Кредит', value: data.details?.credit },
+].filter((row): row is { label: string; value: string } => Boolean(row.value));
+
+const site = Astro.site ?? new URL('https://susargard.github.io');
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'VisualArtwork',
+  name: data.title,
+  description: data.summary,
+  dateCreated: data.year,
+  artform: sectionTitle,
+  url: new URL(Astro.url.pathname, site).href,
+  creator: {
+    '@type': 'Person',
+    name: settings.name,
+    alternateName: settings.alias,
+  },
+};
+
+const theme = data.theme ?? section?.data.theme;
+const fallbackPreset = section?.data.theme?.preset;
+const hasGallery = data.gallery.length > 0;
+---
+
+<BaseLayout
+  title={data.title}
+  description={data.seoDescription || data.summary}
+  theme={theme}
+  fallbackPreset={fallbackPreset}
+  jsonLd={jsonLd}
+>
+  <div class="container">
+    <nav class="breadcrumbs" aria-label="Хлебные крошки">
+      <a href={withBase('/')}>Главная</a>
+      <span aria-hidden="true">/</span>
+      <a href={sectionUrl(data.section)}>{sectionTitle}</a>
+      <span aria-hidden="true">/</span>
+      <span aria-current="page">{data.title}</span>
+    </nav>
+
+    <header class="project-hero">
+      <div class="project-hero__meta">
+        <a class="project-hero__section" href={sectionUrl(data.section)}>{sectionTitle}</a>
+        {year && <span>{year}</span>}
+        {data.draft && (import.meta.env.DEV || import.meta.env.PUBLIC_SHOW_DRAFTS === 'true') && <span class="badge badge--draft">Черновик</span>}
+      </div>
+
+      <h1 class="project-hero__title">{data.title}</h1>
+      <p class="project-hero__summary">{data.summary}</p>
+
+      {
+        data.tags.length > 0 && (
+          <ul class="tag-list tag-list--hero" aria-label="Теги">
+            {data.tags.map((tag) => <li class="tag">{tag}</li>)}
+          </ul>
+        )
+      }
+    </header>
+  </div>
+
+  {
+    data.cover ? (
+      <figure class="project-cover">
+        <Image
+          src={data.cover}
+          alt={data.coverAlt ?? data.title}
+          widths={[800, 1200, 1600, 2200]}
+          sizes="(max-width: 1300px) 100vw, 1240px"
+          loading="eager"
+          decoding="async"
+          fetchpriority="high"
+          class="project-cover__image"
+          style={`object-position: center ${data.coverPosition}`}
+        />
+      </figure>
+    ) : (
+      <div class="container">
+        <div class="project-cover project-cover--empty" aria-hidden="true">
+          <Ornament variant="seed" />
+        </div>
+      </div>
+    )
+  }
+
+  <div class="container">
+    <div class:list={['project-layout', { 'project-layout--single': detailRows.length === 0 }]}>
+      <div class="project-story prose">
+        <Content />
+      </div>
+
+      {
+        detailRows.length > 0 && (
+          <aside class="project-details" aria-label="Детали проекта">
+            <p class="eyebrow">Детали</p>
+            <dl>
+              {detailRows.map((row) => (
+                <div class="project-details__row">
+                  <dt>{row.label}</dt>
+                  <dd>{row.value}</dd>
+                </div>
+              ))}
+            </dl>
+            {
+              data.tags.length > 0 && (
+                <ul class="tag-list project-details__tags" aria-label="Теги">
+                  {data.tags.map((tag) => <li class="tag">{tag}</li>)}
+                </ul>
+              )
+            }
+          </aside>
+        )
+      }
+    </div>
+
+    {hasGallery && <Gallery items={data.gallery} title={data.title} />}
+
+    {
+      data.beforeAfter && (
+        <BeforeAfter
+          before={data.beforeAfter.before}
+          after={data.beforeAfter.after}
+          caption={data.beforeAfter.caption}
+          title={data.title}
+        />
+      )
+    }
+
+    {data.files.length > 0 && <FileList files={data.files} slug={project.id} />}
+  </div>
+
+  <nav class="project-next-wrap" aria-label="Навигация по проектам">
+    <div class="container">
+      {
+        next ? (
+          <a class="project-next" href={projectUrl(next.data.section, next.id)}>
+            <span class="eyebrow">Следующая работа</span>
+            <span class="project-next__title">{next.data.title}</span>
+            <span class="project-next__arrow" aria-hidden="true">→</span>
+          </a>
+        ) : (
+          <a class="project-next" href={sectionUrl(data.section)}>
+            <span class="eyebrow">Вернуться в раздел</span>
+            <span class="project-next__title">{sectionTitle}</span>
+            <span class="project-next__arrow" aria-hidden="true">→</span>
+          </a>
+        )
+      }
+    </div>
+  </nav>
+</BaseLayout>

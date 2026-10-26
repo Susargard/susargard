@@ -1,0 +1,187 @@
+---
+import { render } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Ornament from '../components/Ornament.astro';
+import { getPage, getSettings, withBase } from '../lib/content';
+
+const page = await getPage('about');
+const { data } = page;
+const { Content } = await render(page);
+const settings = await getSettings();
+
+const portraitPath = data.portrait || settings.portrait;
+const portrait = portraitPath ? withBase(portraitPath) : undefined;
+const hasEducation = data.education.length > 0;
+const hasExhibitions = data.exhibitions.length > 0;
+const hasExperience = data.experience.length > 0;
+---
+
+<BaseLayout
+  title={data.title}
+  description={data.seoDescription || data.lead}
+  theme={{ preset: 'paper', accent: '#a65c3f' }}
+>
+  <div class="container">
+    <nav class="breadcrumbs" aria-label="Хлебные крошки">
+      <a href={withBase('/')}>Главная</a>
+      <span aria-hidden="true">/</span>
+      <span aria-current="page">{data.title}</span>
+    </nav>
+
+    <header class="page-hero">
+      <p class="eyebrow">Обо мне</p>
+      <h1 class="page-hero__title">{data.title}</h1>
+      <p class="page-hero__lead">{data.lead}</p>
+    </header>
+
+    <div class="about-intro">
+      <aside class="about-intro__portrait" aria-label="Портрет">
+        {
+          portrait ? (
+            <img
+              src={portrait}
+              alt={settings.portraitAlt || settings.name}
+              loading="eager"
+              decoding="async"
+            />
+          ) : (
+            <div class="portrait-plate" aria-hidden="true">
+              <Ornament variant="branch" />
+              <span class="portrait-plate__monogram">АС</span>
+              <span class="portrait-plate__caption">{settings.alias}</span>
+            </div>
+          )
+        }
+        <span class="about-intro__caption">{settings.name} · {settings.city}</span>
+      </aside>
+
+      <div class="about-intro__text">
+        {data.intro && <p class="about-intro__lead">{data.intro}</p>}
+        <div class="prose">
+          <Content />
+        </div>
+        <div class="about-intro__actions">
+          <a class="btn" href={withBase('/contacts/')}>Связаться</a>
+          <a
+            class="link-arrow"
+            href={settings.instagram ?? withBase('/contacts/')}
+            target={settings.instagram ? '_blank' : undefined}
+            rel={settings.instagram ? 'noopener noreferrer' : undefined}
+          >
+            Instagram <span aria-hidden="true">↗</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <section class="about-section" id="experience">
+      <div class="about-section__head">
+        <span class="about-section__index" aria-hidden="true">01</span>
+        <h2 class="about-section__title">Опыт</h2>
+        <p class="about-section__note">Основное — практика и проекты</p>
+      </div>
+
+      {
+        hasExperience ? (
+          <div class="timeline">
+            {data.experience.map((item) => (
+              <article class="timeline__item">
+                <div class="timeline__period">{item.period}</div>
+                <div class="timeline__body">
+                  <h3 class="timeline__role">{item.role}</h3>
+                  {item.place && <p class="timeline__place">{item.place}</p>}
+                  {item.description && <p class="timeline__text">{item.description}</p>}
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <p class="about-empty">
+            Здесь появится хронология опыта: места работы, проекты и годы. Раздел
+            наполняется через админку.
+          </p>
+        )
+      }
+    </section>
+
+    {
+      hasEducation && (
+        <section class="about-section" id="education">
+          <div class="about-section__head">
+            <span class="about-section__index" aria-hidden="true">02</span>
+            <h2 class="about-section__title">Образование</h2>
+          </div>
+          <div class="education-list">
+            {data.education.map((item) => (
+              <div class="education-list__item">
+                <span class="education-list__period">{item.period}</span>
+                <div>
+                  <h3>{item.title}</h3>
+                  {item.place && <p class="muted">{item.place}</p>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )
+    }
+
+    {
+      data.services.length > 0 && (
+        <section class="about-section" id="services">
+          <div class="about-section__head">
+            <span class="about-section__index" aria-hidden="true">03</span>
+            <h2 class="about-section__title">Чем могу помочь</h2>
+          </div>
+          <div class="services-grid">
+            {data.services.map((service, index) => (
+              <article class="service-card">
+                <span class="service-card__number">{String(index + 1).padStart(2, '0')}</span>
+                <h3 class="service-card__title">{service.title}</h3>
+                {service.description && <p class="service-card__text">{service.description}</p>}
+              </article>
+            ))}
+          </div>
+        </section>
+      )
+    }
+
+    {
+      hasExhibitions && (
+        <section class="about-section" id="exhibitions">
+          <div class="about-section__head">
+            <span class="about-section__index" aria-hidden="true">04</span>
+            <h2 class="about-section__title">Выставки и публикации</h2>
+          </div>
+          <ul class="exhibitions-list">
+            {data.exhibitions.map((item) => (
+              <li class="exhibitions-list__item">
+                <span class="exhibitions-list__year">{item.year}</span>
+                <span class="exhibitions-list__title">{item.title}</span>
+                {item.place && <span class="exhibitions-list__place">{item.place}</span>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+
+    {!hasEducation && !hasExhibitions && (
+      <p class="pending-note">
+        Образование, выставки и публикации появятся здесь позже.
+      </p>
+    )}
+
+    <section class="about-cta">
+      <div>
+        <p class="eyebrow">Связь</p>
+        <h2 class="about-cta__title">Расскажите о своей идее</h2>
+        <p class="about-cta__text">
+          Иллюстрация для книги, роспись стены или бережная работа с историческим
+          зданием — начнём с разговора.
+        </p>
+      </div>
+      <a class="btn" href={withBase('/contacts/')}>Контакты <span aria-hidden="true">→</span></a>
+    </section>
+  </div>
+</BaseLayout>

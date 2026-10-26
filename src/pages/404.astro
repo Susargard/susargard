@@ -1,0 +1,37 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Ornament from '../components/Ornament.astro';
+import { getSections, withBase } from '../lib/content';
+
+const sections = await getSections();
+---
+
+<BaseLayout title="Страница не найдена" description="Такой страницы нет." noindex canonical={false}>
+  <div class="container not-found">
+    <div class="not-found__art" aria-hidden="true">
+      <Ornament variant="wave" />
+    </div>
+
+    <div class="not-found__body">
+      <p class="eyebrow">Ошибка 404</p>
+      <h1 class="not-found__title">Такой страницы нет</h1>
+      <p class="not-found__text">
+        Возможно, ссылка устарела или в адресе есть опечатка. Начните с главной или
+        выберите раздел.
+      </p>
+
+      <div class="not-found__actions">
+        <a class="btn" href={withBase('/')}>На главную</a>
+        <a class="link-arrow" href={withBase('/contacts/')}>Контакты <span aria-hidden="true">→</span></a>
+      </div>
+
+      <ul class="not-found__sections">
+        {sections.map((section) => (
+          <li>
+            <a href={withBase(`/${section.id}/`)}>{section.data.title}</a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </div>
+</BaseLayout>

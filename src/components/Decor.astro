@@ -1,0 +1,29 @@
+---
+import { Image } from 'astro:assets';
+import type { ThemeDecor } from '../lib/theme';
+
+interface Props {
+  decor?: ThemeDecor;
+}
+
+const { decor } = Astro.props;
+---
+
+{
+  decor?.image && (
+    <div
+      class:list={['decor', `decor--${decor.position}`]}
+      style={`--decor-size:${decor.size}%;--decor-opacity:${decor.opacity / 100}`}
+      aria-hidden="true"
+    >
+      <Image
+        src={decor.image}
+        alt=""
+        widths={[400, 800, 1200]}
+        sizes="(max-width: 760px) 40vw, 30vw"
+        loading="lazy"
+        decoding="async"
+      />
+    </div>
+  )
+}

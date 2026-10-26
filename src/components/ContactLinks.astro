@@ -1,0 +1,54 @@
+---
+import type { SiteSettings } from '../lib/content';
+import { contactLinks } from '../lib/social';
+
+interface Props {
+  settings: SiteSettings;
+  compact?: boolean;
+  showAvailability?: boolean;
+}
+
+const { settings, compact = false, showAvailability = true } = Astro.props;
+const links = contactLinks(settings);
+---
+
+<div class:list={['contact-links', { 'contact-links--compact': compact }]}>
+  {
+    links.length > 0 ? (
+      <ul class="contact-links__list">
+        {links.map((link) => (
+          <li>
+            <a
+              class="contact-links__row"
+              href={link.href}
+              target={link.external ? '_blank' : undefined}
+              rel={link.external ? 'noopener noreferrer' : undefined}
+            >
+              <span class="contact-links__label">{link.label}</span>
+              <span class="contact-links__value">{link.value}</span>
+              <span class="contact-links__arrow" aria-hidden="true">
+                {link.external ? '↗' : '→'}
+              </span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    ) : (
+      <p class="contact-links__empty">Контакты скоро появятся. Пока — Instagram.</p>
+    )
+  }
+
+  {
+    showAvailability && (settings.available || settings.city) && (
+      <div class="contact-links__foot">
+        {settings.available && (
+          <span class="status">
+            <span class="status__dot" aria-hidden="true"></span>
+            {settings.availabilityNote || 'Открыта к заказам'}
+          </span>
+        )}
+        {settings.city && <span class="muted">{settings.city}</span>}
+      </div>
+    )
+  }
+</div>

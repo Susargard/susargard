@@ -1,0 +1,67 @@
+---
+import { Image } from 'astro:assets';
+import type { ProjectEntry } from '../lib/content';
+import { projectUrl, formatYear } from '../lib/content';
+import Ornament from './Ornament.astro';
+
+interface Props {
+  project: ProjectEntry;
+  index?: number;
+  compact?: boolean;
+}
+
+const { project, index = 0, compact = false } = Astro.props;
+const { data } = project;
+const year = formatYear(data.year);
+const visibleTags = data.tags.slice(0, 3);
+const extraTags = data.tags.length - visibleTags.length;
+const variants = ['branch', 'seed', 'sun', 'wave'] as const;
+---
+
+<article class:list={['project-card', { 'project-card--compact': compact }]}>
+  <a class="project-card__link" href={projectUrl(data.section, project.id)}>
+    <div class="project-card__cover">
+      {
+        data.cover ? (
+          <Image
+            src={data.cover}
+            alt={data.coverAlt ?? data.title}
+            widths={[400, 700, 1000, 1400]}
+            sizes={compact ? '(max-width: 700px) 92vw, 30vw' : '(max-width: 700px) 92vw, 46vw'}
+            loading="lazy"
+            decoding="async"
+            class="project-card__image"
+            style={`object-position:center ${data.coverPosition}`}
+          />
+        ) : (
+          <div class="project-card__placeholder">
+            <Ornament variant={variants[index % variants.length]} />
+          </div>
+        )
+      }
+
+      {data.draft && (import.meta.env.DEV || import.meta.env.PUBLIC_SHOW_DRAFTS === 'true') && <span class="badge badge--draft">Черновик</span>}
+
+      <span class="project-card__open" aria-hidden="true">Смотреть <span>↗</span></span>
+    </div>
+
+    <div class="project-card__body">
+      <div class="project-card__meta">
+        {year && <span>{year}</span>}
+        {data.details?.object && <span class="project-card__object">{data.details.object}</span>}
+      </div>
+
+      <h3 class="project-card__title">{data.title}</h3>
+      {!compact && <p class="project-card__summary">{data.summary}</p>}
+
+      {
+        visibleTags.length > 0 && (
+          <ul class="tag-list" aria-label="Теги">
+            {visibleTags.map((tag) => <li class="tag">{tag}</li>)}
+            {extraTags > 0 && <li class="tag tag--muted">+{extraTags}</li>}
+          </ul>
+        )
+      }
+    </div>
+  </a>
+</article>
