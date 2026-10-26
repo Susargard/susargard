@@ -8,17 +8,19 @@ interface Props {
   project: ProjectEntry;
   index?: number;
   compact?: boolean;
+  tags?: string[];
 }
 
-const { project, index = 0, compact = false } = Astro.props;
+const { project, index = 0, compact = false, tags = [] } = Astro.props;
 const { data } = project;
 const year = formatYear(data.year);
-const visibleTags = data.tags.slice(0, 3);
-const extraTags = data.tags.length - visibleTags.length;
+const visibleTags = (tags.length ? tags : data.tags).slice(0, 3);
+const extraTags = (tags.length ? tags : data.tags).length - visibleTags.length;
 const variants = ['branch', 'seed', 'sun', 'wave'] as const;
+const tagsJson = JSON.stringify(tags.length ? tags : data.tags);
 ---
 
-<article class:list={['project-card', { 'project-card--compact': compact }]}>
+<article class:list={['project-card', { 'project-card--compact': compact }]} data-tags={tagsJson}>
   <a class="project-card__link" href={projectUrl(data.section, project.id)}>
     <div class="project-card__cover">
       {

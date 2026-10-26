@@ -10,6 +10,7 @@ import {
   projectsOf,
   withBase,
   type SectionEntry,
+  type ProjectEntry,
 } from '../../lib/content';
 import { resolveTheme } from '../../lib/theme';
 import { worksLabel } from '../../lib/plural';
@@ -39,6 +40,11 @@ const number = String(index + 1).padStart(2, '0');
 const nextTheme = next ? resolveTheme(next.data.theme) : undefined;
 const instagram = settings.instagram;
 const variant = (['branch', 'seed', 'arch'] as const)[index % 3];
+
+// Собираем уникальные теги из проектов этого раздела
+const allTags = Array.from(
+  new Set(projects.flatMap((p: ProjectEntry) => p.data.tags))
+).sort((a, b) => a.localeCompare(b, 'ru'));
 ---
 
 <BaseLayout
@@ -75,11 +81,22 @@ const variant = (['branch', 'seed', 'arch'] as const)[index % 3];
     <div class="container">
       {
         projects.length > 0 ? (
-          <div class="project-grid">
-            {projects.map((project, projectIndex) => (
-              <ProjectCard project={project} index={projectIndex} />
-            ))}
-          </div>
+          <>
+            {allTags.length > 0 && (
+              <div class="tag-filter" aria-label="Фильтр по тегам">
+                <label for="tag-filter" class="visually-hidden">Фильтр по тегам</label>
+                <select id="tag-filter" class="tag-filter__select">
+                  <option value="">Все</option>
+                  {allTags.map(tag => <option value={tag}>{tag}</option>)}
+                </select>
+              </div>
+            )}
+            <div class="project-grid" id="project-grid">
+              {projects.map((project, projectIndex) => (
+                <ProjectCard project={project} index={projectIndex} tags={project.data.tags} />
+              ))}
+            </div>
+          </>
         ) : (
           <EmptyState
             eyebrow="Раздел наполняется"
@@ -108,3 +125,22 @@ const variant = (['branch', 'seed', 'arch'] as const)[index % 3];
     )
   }
 </BaseLayout>
+
+<script>
+  const select = document.getElementById('tag-filter');
+  const grid = document.getElementById('project-grid');
+  if (select && grid) {
+    const cards = grid.querySelectorAll('.project-card[data-tags]');
+    select.addEventListener('change', () => {
+      const tag = select.value;
+      cards.forEach(card => {
+        try {
+          const tags = JSON.parse(card.dataset.tags || '[]');
+          card.style.display = !tag || tags.includes(tag) ? '' : 'none';
+        } catch {
+          card.style.display = '';
+        }
+      });
+    });
+  }
+</script>
