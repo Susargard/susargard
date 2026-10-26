@@ -41,6 +41,8 @@ npm run preview    # посмотреть собранный сайт
 Демо-проекты лежат в `src/content/projects/demo-*` и помечены `draft: true`.
 В обычной сборке и на сайте они не показываются. Чтобы посмотреть их локально,
 достаточно `npm run dev`; чтобы собрать демо-версию — `npm run build:demo`.
+Когда появятся настоящие работы, папки `src/content/projects/demo-*` и
+`public/files/demo-restoration` можно удалить.
 
 ## Как добавить работу
 
